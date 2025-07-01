@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.log
+
+# Virtual env
+.venv/
+env/
+ENV/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# VS Code / JetBrains
+.vscode/
+.idea/
+
+# Cache
+.cache/
+pip-wheel-metadata/
+

@@ -14,6 +14,6 @@ def categorize(body: RequestBody):
             confidence=conf
         )
         for item in body.items
-        for label, conf in [classify(item.criteria, item.answer)]
+        for label, conf in [classify(item.criteria, item.answer, item.question)]
     ]
     return ResponseBody(results=results)

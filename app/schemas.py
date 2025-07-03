@@ -1,17 +1,20 @@
 from pydantic import BaseModel, Field, validator
-from typing import Dict, List
+from typing import Dict, List, Literal
+
+Category = Literal["Broken", "Needs Improvement", "Ideal",
+                   "Gold Standard", "No Match"]
 
 # ---------- Incoming ---------- #
 class ItemIn(BaseModel):
     id: int
     question: str
-    criteria: Dict[str, str]
+    criteria: Dict[str, str]          # only the four real categories
     answer: str = Field(..., example="We close audits 120 days after year‑end")
 
     @validator("criteria")
-    def at_least_two(cls, v):
-        if len(v) < 2:
-            raise ValueError("criteria needs ≥2 categories")
+    def at_least_four(cls, v):
+        if len(v) < 4:
+            raise ValueError("criteria needs 4 categories (Broken→Gold Standard)")
         return v
 
 
@@ -23,8 +26,8 @@ class RequestBody(BaseModel):
 class ItemOut(BaseModel):
     id: int
     question: str
-    picked_category: str
-    confidence: float          # 0‑1
+    picked_category: Category
+    confidence: float                 # 0‑1
 
 
 class ResponseBody(BaseModel):

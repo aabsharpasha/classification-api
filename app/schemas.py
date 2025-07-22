@@ -26,6 +26,7 @@ class RequestBody(BaseModel):
 class ItemOut(BaseModel):
     id: int
     question: str
+    response: str
     picked_category: Category
     confidence: float                 # 0‑1
 

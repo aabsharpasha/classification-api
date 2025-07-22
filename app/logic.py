@@ -1,38 +1,65 @@
-import torch
-from sentence_transformers import SentenceTransformer, CrossEncoder, util
+from dotenv import load_dotenv
+from huggingface_hub import InferenceClient
+import re
+import os
 
-# Models
-_be = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")   # parrot check
-_ce = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")            # similarity
+# Load HuggingFace token from environment variable for better security
+load_dotenv()  # Automatically reads .env file
+HF_TOKEN = os.getenv("HF_TOKEN")
 
-# Hyper‑parameters
-PARROT = 0.80       # answer ≈ question  →  No Match
-TEMP   = 8.0        # higher = sharper confidences (try 6‑10)
-MIN_CONF = 0.40     # if best soft‑max prob < 40 %  →  No Match
+if not HF_TOKEN:
+    raise ValueError("HuggingFace token not found. Please set the HF_TOKEN environment variable.")
 
-def classify(criteria: dict, answer: str, question: str):
-    labels, crit_sentences = zip(*criteria.items())
+# Initialize HuggingFace Inference Client
+client = InferenceClient(
+    model="deepseek-ai/DeepSeek-V3",
+    token=HF_TOKEN
+)
 
-    # 1️⃣  Parrot guard
-    if util.cos_sim(
-        _be.encode(answer, convert_to_tensor=True),
-        _be.encode(question, convert_to_tensor=True)
-    ).item() >= PARROT:
-        return "No Match", 100.0
+def classify_response(criteria, answer, question):
+    prompt = f"""You are a financial audit compliance evaluator.
 
-    # 2️⃣  Cross‑encoder scores
-    pairs  = [(answer, crit) for crit in crit_sentences]
-    logits = torch.tensor(_ce.predict(pairs))                 # shape [n_criteria]
+Your task is to evaluate the following response based on the provided rubric and classify it into one of the following categories:
 
-    # 3️⃣  Temperature‑scaled soft‑max  →  probabilities
-    probs     = torch.softmax(logits * TEMP, dim=0)
-    best_idx  = int(torch.argmax(probs))
-    best_prob = float(probs[best_idx])
+- Broken
+- Needs Improvement
+- Ideal
+- Gold Standard
+- No Match
 
-    # 4️⃣  Decide label
-    if best_prob < MIN_CONF:
-        # Everything scored low → treat as No Match
-        return "No Match", 100.0
+### Instructions:
+- Only respond with one of the categories above, nothing else.
+- Use No Match if the response is completely unrelated to the rubric.
+- Also return your confidence score as a number from 0 to 100, where 100 means highest confidence.
 
-    # Otherwise accept the best label (even if answer goes beyond Gold wording)
-    return labels[best_idx], round(best_prob * 100, 2)
+### Rubric:
+{criteria}
+
+### Response:
+{answer}
+
+### Classification (Format: Label, Confidence):"""
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=20,
+            temperature=0.3,
+        )
+        raw_output = completion.choices[0].message.content.strip()
+        print("Raw output:", raw_output)
+
+        # Try to extract using regex
+        match = re.match(r"(?i)(broken|needs improvement|ideal|gold standard|no match)[^\d]*(\d{1,3})", raw_output)
+        if match:
+            label = match.group(1).title()
+            confidence = float(match.group(2))
+            confidence = min(confidence, 100.0)
+            return label, confidence
+
+        print("Unrecognized format, fallback:", raw_output)
+        return "Broken", 0.0
+
+    except Exception as err:
+        print(f"Client Error: {err}")
+        return "Broken", 0.0

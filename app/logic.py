@@ -28,6 +28,9 @@ Your task is to evaluate the following response based on the provided rubric and
 - No Match
 
 ### Instructions:
+- If the response is better than Gold Standard, classify it as Gold Standard.
+- If the response is worse than Broken, classify it as Broken.
+- If the response is not relevant to the rubric, classify it as No Match.
 - Only respond with one of the categories above, nothing else.
 - Use No Match if the response is completely unrelated to the rubric.
 - Also return your confidence score as a number from 0 to 100, where 100 means highest confidence.

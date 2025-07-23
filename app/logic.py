@@ -6,15 +6,20 @@ import os
 # Load HuggingFace token from environment variable for better security
 load_dotenv()  # Automatically reads .env file
 HF_TOKEN = os.getenv("HF_TOKEN")
+GROQ_TOKEN = os.getenv("GROQ_TOKEN")
+from groq import Groq
+
+client = Groq()
+
 
 if not HF_TOKEN:
     raise ValueError("HuggingFace token not found. Please set the HF_TOKEN environment variable.")
 
 # Initialize HuggingFace Inference Client
-client = InferenceClient(
-    model="deepseek-ai/DeepSeek-V3",
-    token=HF_TOKEN
-)
+# client = InferenceClient(
+#     model="deepseek-ai/DeepSeek-V3",
+#     token=HF_TOKEN
+# )
 
 def classify_response(criteria, answer, question):
     prompt = f"""You are a financial audit compliance evaluator.
@@ -43,10 +48,13 @@ Your task is to evaluate the following response based on the provided rubric and
 
 ### Classification (Format: Label, Confidence):"""
 
+    
+    
     try:
         completion = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=20,
+            max_tokens=1024,
             temperature=0.3,
         )
         raw_output = completion.choices[0].message.content.strip()

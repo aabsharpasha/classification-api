@@ -1,19 +1,19 @@
 from dotenv import load_dotenv
-from huggingface_hub import InferenceClient
 import re
 import os
-
-# Load HuggingFace token from environment variable for better security
-load_dotenv()  # Automatically reads .env file
-HF_TOKEN = os.getenv("HF_TOKEN")
-GROQ_TOKEN = os.getenv("GROQ_TOKEN")
 from groq import Groq
+
+
+load_dotenv()  # Automatically reads .env file
+#HF_TOKEN = os.getenv("HF_TOKEN")
+GROQ_TOKEN = os.getenv("GROQ_TOKEN")
+
 
 client = Groq()
 
 
-if not HF_TOKEN:
-    raise ValueError("HuggingFace token not found. Please set the HF_TOKEN environment variable.")
+# if not HF_TOKEN:
+#     raise ValueError("HuggingFace token not found. Please set the HF_TOKEN environment variable.")
 
 # Initialize HuggingFace Inference Client
 # client = InferenceClient(
